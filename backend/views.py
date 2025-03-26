@@ -57,3 +57,38 @@ class LoginView(APIView):
                 'user': UserSerializer(user).data
             }, status=status.HTTP_200_OK)
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class ProductListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    @extend_schema(
+        responses={200: ProductSerializer(many=True)},
+        summary="List all products",
+        description="List all available products.",
+        tags=['Products'],
+    )
+
+    def get(self, request):
+        products = Product.objects.all()
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data)
+
+
+class ProductDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    @extend_schema(
+        responses={200: ProductInfoSerializer},
+        summary="Retrieve a product",
+        description="Retrieve details of a specific product.",
+        tags=['Products'],
+    )
+
+    def get(self, request, product_id):
+        try:
+            product_info = ProductInfo.objects.get(product_id=product_id)
+            serializer = ProductInfoSerializer(product_info)
+            return Response(serializer.data)
+        except Product.DoesNotExist:
+            return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
