@@ -24,7 +24,7 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = ['id', 'name', 'category']
 
-    def get_category(self, obj):
+    def get_category(self, obj) -> str:
         return obj.category.name
 
 
@@ -56,11 +56,11 @@ class OrderDetailSerializer(serializers.ModelSerializer):
         model = OrderItem
         fields = ["product", "shop", "price", "quantity", "total_price"]
 
-    def get_product_info_price(self, obj):
+    def get_product_info_price(self, obj) -> float:
         product_info = ProductInfo.objects.filter(product=obj.product, shop=obj.shop).first()
         return product_info.price if product_info else None
 
-    def get_total_price(self, obj):
+    def get_total_price(self, obj) -> float:
         product_info = ProductInfo.objects.filter(product=obj.product, shop=obj.shop).first()
         return product_info.price * obj.quantity
 
@@ -68,7 +68,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
 class DeliveryAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = DeliveryAddress
-        fields = ['id', 'user', 'address_line', 'city', 'postal_code', 'country']
+        fields = ['id', 'address_line', 'city', 'postal_code', 'country']
 
 class ContactSerializer(serializers.ModelSerializer):
     class Meta:

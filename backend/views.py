@@ -36,7 +36,6 @@ class RegisterView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
     @extend_schema(
@@ -111,6 +110,7 @@ class CartView(APIView):
         serializer = OrderDetailSerializer(order_items, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
 class CartAddView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -159,3 +159,53 @@ class CartDeleteView(APIView):
         return Response({'message': "Item deleted"}, status=status.HTTP_204_NO_CONTENT)
 
 
+class DeliveryAddressView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        responses={200: DeliveryAddressSerializer(many=True)},
+        summary="List all delivery addresses",
+        description="List all delivery addresses.",
+        tags=['Delivery Address'],
+    )
+
+    def get(self, request):
+        addresses = DeliveryAddress.objects.filter(user=request.user)
+        if not addresses:
+            return Response({'error': 'No addresses found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = DeliveryAddressSerializer(addresses, many=True)
+        return Response(serializer.data)
+
+class DeliveryAddressAddView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        request=DeliveryAddressSerializer,
+        responses={201: DeliveryAddressSerializer},
+        summary="Adding a delivery address",
+        description="Adding a delivery address.",
+        tags=['Delivery Address'],
+    )
+
+    def post(self, request):
+        serializer = DeliveryAddressSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DeliveryAddressDeleteView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        responses={204: None},
+        summary="Delete a delivery address",
+        description="Deletes a specific delivery address by its ID.",
+        tags=['Delivery Address'],
+    )
+
+    def delete(self, request, address_id):
+        address = get_object_or_404(DeliveryAddress, id=address_id, user=request.user)
+        address.delete()
+        return Response({'message': "Address deleted"}, status=status.HTTP_204_NO_CONTENT)
