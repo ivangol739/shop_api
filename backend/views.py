@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
@@ -9,7 +10,7 @@ from drf_spectacular.utils import extend_schema
 from .models import Product, ProductInfo, Order, OrderItem, DeliveryAddress
 from .serializers import (
     UserSerializer, ProductSerializer, ProductInfoSerializer,
-    OrderSerializer, OrderItemSerializer, DeliveryAddressSerializer
+    OrderSerializer, OrderItemSerializer, DeliveryAddressSerializer, OrderDetailSerializer
 )
 
 
@@ -33,6 +34,7 @@ class RegisterView(APIView):
                 'user': UserSerializer(user).data
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class LoginView(APIView):
@@ -90,5 +92,70 @@ class ProductDetailView(APIView):
             return Response(serializer.data)
         except Product.DoesNotExist:
             return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class CartView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    @extend_schema(
+        responses={200: OrderDetailSerializer(many=True)},
+        summary="List all items in the cart",
+        description="List all items in the shopping cart.",
+        tags=['Cart'],
+    )
+
+    def get(self, request):
+        order = Order.objects.filter(user=request.user, status='cart').first()
+        if not order:
+            return Response({'error': 'Cart is empty'}, status=status.HTTP_200_OK)
+        order_items = OrderItem.objects.filter(order=order)
+        serializer = OrderDetailSerializer(order_items, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class CartAddView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        request=OrderItemSerializer,
+        responses={201: OrderItemSerializer},
+        summary="Adding an item to the cart",
+        description="Adding an item to the cart.",
+        tags=['Cart'],
+    )
+
+    def post(self, request):
+        product_id = request.data.get('product_id')
+        quantity = request.data.get('quantity', 1)
+
+        product_info = get_object_or_404(ProductInfo, id=product_id)
+        order, _ = Order.objects.get_or_create(user=request.user, status="cart")
+        order_item, created = OrderItem.objects.get_or_create(
+            order=order,
+            product=product_info.product,
+            shop=product_info.shop,
+            defaults={'quantity': quantity}
+        )
+        if not created:
+            order_item.quantity += quantity
+            order_item.save()
+        else:
+            order_item.quantity = quantity
+        order_item.save()
+        serializer = OrderItemSerializer(order_item)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+class CartDeleteView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        responses={204: None},
+        summary="Clear the cart",
+        description="Deletes a specific product from the shopping cart by its ID.",
+        tags=['Cart'],
+    )
+
+    def delete(self, request, item_id):
+        order_item = get_object_or_404(OrderItem, id=item_id, order__user=request.user, order__status='cart')
+        order_item.delete()
+        return Response({'message': "Item deleted"}, status=status.HTTP_204_NO_CONTENT)
 
 
