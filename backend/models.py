@@ -104,16 +104,19 @@ class OrderItem(models.Model):
         return f"{self.product} x{self.quantity}"
 
 class Contact(models.Model):
-    type = models.CharField(max_length=50)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='contacts')
-    value = models.CharField(max_length=255)
+    last_name = models.CharField(max_length=255)
+    first_name = models.CharField(max_length=255)
+    middle_name = models.CharField(max_length=255, blank=True, null=True)
+    email = models.EmailField()
+    phone = models.CharField(max_length=20)
 
     class Meta:
         verbose_name = 'Контакт'
         verbose_name_plural = 'Контакты'
 
     def __str__(self):
-        return f"{self.type}: {self.value}"
+        return f"{self.last_name} {self.first_name} ({self.phone}) ({self.email})"
 
 class DeliveryAddress(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='delivery_addresses')

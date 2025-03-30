@@ -7,9 +7,9 @@ from django.contrib.auth import authenticate, login
 from django.core.mail import send_mail
 from django.conf import settings
 from drf_spectacular.utils import extend_schema
-from .models import Product, ProductInfo, Order, OrderItem, DeliveryAddress
+from .models import Product, ProductInfo, Order, OrderItem, DeliveryAddress, Contact
 from .serializers import (
-    UserSerializer, ProductSerializer, ProductInfoSerializer,
+    UserSerializer, ProductSerializer, ProductInfoSerializer, ContactSerializer,
     OrderSerializer, OrderItemSerializer, DeliveryAddressSerializer, OrderDetailSerializer
 )
 
@@ -209,3 +209,36 @@ class DeliveryAddressDeleteView(APIView):
         address = get_object_or_404(DeliveryAddress, id=address_id, user=request.user)
         address.delete()
         return Response({'message': "Address deleted"}, status=status.HTTP_204_NO_CONTENT)
+
+
+class ContactView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        request=ContactSerializer,
+        responses={201: ContactSerializer},
+        summary="Adding a contact",
+        description="Adding a contact.",
+        tags=['Contact'],
+    )
+
+    def post(self, request):
+        serializer = ContactSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(
+        responses={200: ContactSerializer(many=True)},
+        summary="List all contacts",
+        description="List all contacts.",
+        tags=['Contact'],
+    )
+
+    def get(self, request):
+        contacts = Contact.objects.filter(user=request.user)
+        if not contacts:
+            return Response({'error': 'No contacts found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ContactSerializer(contacts, many=True)
+        return Response(serializer.data)

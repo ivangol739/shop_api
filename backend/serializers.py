@@ -64,7 +64,6 @@ class OrderDetailSerializer(serializers.ModelSerializer):
         product_info = ProductInfo.objects.filter(product=obj.product, shop=obj.shop).first()
         return product_info.price * obj.quantity
 
-
 class DeliveryAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = DeliveryAddress
@@ -73,4 +72,4 @@ class DeliveryAddressSerializer(serializers.ModelSerializer):
 class ContactSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
-        fields = ['id', 'type', 'user', 'value']
+        fields = ['id', 'last_name', 'first_name', 'middle_name', 'email', 'phone']
