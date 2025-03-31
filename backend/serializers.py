@@ -27,7 +27,6 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_category(self, obj) -> str:
         return obj.category.name
 
-
 class ProductInfoSerializer(serializers.ModelSerializer):
     product = ProductSerializer()
     class Meta:
@@ -46,23 +45,30 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = ['id', 'user', 'dt', 'status', 'items']
 
+class OrderConfirmSerializer(serializers.ModelSerializer):
+    order_id = serializers.IntegerField(required=True)
+    contact_id = serializers.IntegerField(required=True)
+    class Meta:
+        model = Order
+        fields = ['order_id', 'contact_id']
+
 class OrderDetailSerializer(serializers.ModelSerializer):
     product = serializers.CharField(source='product.name', read_only=True)
     shop = serializers.CharField(source='shop.name', read_only=True)
-    price = serializers.DecimalField(source='get_product_info_price', max_digits=2, decimal_places=2, read_only=True)
+    price = serializers.SerializerMethodField()
     quantity = serializers.IntegerField()
     total_price = serializers.SerializerMethodField()
     class Meta:
         model = OrderItem
         fields = ["product", "shop", "price", "quantity", "total_price"]
 
-    def get_product_info_price(self, obj) -> float:
+    def get_price(self, obj) -> float:
         product_info = ProductInfo.objects.filter(product=obj.product, shop=obj.shop).first()
         return product_info.price if product_info else None
 
     def get_total_price(self, obj) -> float:
         product_info = ProductInfo.objects.filter(product=obj.product, shop=obj.shop).first()
-        return product_info.price * obj.quantity
+        return (product_info.price * obj.quantity) if product_info else 0
 
 class DeliveryAddressSerializer(serializers.ModelSerializer):
     class Meta:
@@ -73,3 +79,4 @@ class ContactSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
         fields = ['id', 'last_name', 'first_name', 'middle_name', 'email', 'phone']
+

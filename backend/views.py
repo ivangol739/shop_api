@@ -1,3 +1,4 @@
+from django.core.serializers import serialize
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -10,8 +11,9 @@ from drf_spectacular.utils import extend_schema
 from .models import Product, ProductInfo, Order, OrderItem, DeliveryAddress, Contact
 from .serializers import (
     UserSerializer, ProductSerializer, ProductInfoSerializer, ContactSerializer,
-    OrderSerializer, OrderItemSerializer, DeliveryAddressSerializer, OrderDetailSerializer
+    OrderSerializer, OrderItemSerializer, DeliveryAddressSerializer, OrderDetailSerializer, OrderConfirmSerializer
 )
+
 
 
 class RegisterView(APIView):
@@ -242,3 +244,36 @@ class ContactView(APIView):
             return Response({'error': 'No contacts found'}, status=status.HTTP_404_NOT_FOUND)
         serializer = ContactSerializer(contacts, many=True)
         return Response(serializer.data)
+
+
+class OrderConfirmView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        request=OrderConfirmSerializer,
+        responses={200: None},
+        summary="Confirm an order",
+        description="Confirm an order.",
+        tags=['Order'],
+    )
+
+    def post(self, request):
+        serializer = OrderConfirmSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        order_id = serializer.validated_data["order_id"]
+        contact_id = serializer.validated_data["contact_id"]
+
+        order = get_object_or_404(Order, id=order_id, user=request.user, status='cart')
+        contact = get_object_or_404(Contact, id=contact_id, user=request.user)
+        order.status = 'confirmed'
+        order.save()
+        send_mail(
+            'Подтверждение заказа',
+            f'Ваш заказ #{order.id} подтверждён.',
+            'shop@example.com',
+            [request.user.email],
+            fail_silently=False,
+        )
+        return Response({'message': 'Заказ подтверждён и email отправлен'}, status=status.HTTP_200_OK)
