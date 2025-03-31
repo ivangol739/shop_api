@@ -11,10 +11,9 @@ from drf_spectacular.utils import extend_schema
 from .models import Product, ProductInfo, Order, OrderItem, DeliveryAddress, Contact
 from .serializers import (
     UserSerializer, ProductSerializer, ProductInfoSerializer, ContactSerializer,
-    OrderSerializer, OrderItemSerializer, DeliveryAddressSerializer, OrderConfirmSerializer,
-    CartSerializer
+    OrderItemSerializer, DeliveryAddressSerializer, OrderConfirmSerializer,
+    CartSerializer, OrderHistorySerializer
 )
-
 
 
 class RegisterView(APIView):
@@ -281,3 +280,21 @@ class OrderConfirmView(APIView):
             fail_silently=False,
         )
         return Response({'message': 'Заказ подтверждён и email отправлен'}, status=status.HTTP_200_OK)
+
+
+class OrderHistoryView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        responses={200: OrderHistorySerializer(many=True)},
+        summary="List all orders",
+        description="Getting a list of all user's orders with their status, date, and total amount.",
+        tags=['Order'],
+    )
+
+    def get(self, request):
+        orders = Order.objects.filter(user=request.user).order_by('-dt')
+        if not orders:
+            return Response({'error': 'No orders found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = OrderHistorySerializer(orders, many=True)
+        return Response(serializer.data)

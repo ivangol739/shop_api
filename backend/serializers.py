@@ -40,12 +40,6 @@ class OrderItemSerializer(serializers.ModelSerializer):
         model = OrderItem
         fields = ['id', 'product_id', 'quantity']
 
-class OrderSerializer(serializers.ModelSerializer):
-    items = OrderItemSerializer(many=True, read_only=True)
-    class Meta:
-        model = Order
-        fields = ['id', 'user', 'dt', 'status', 'items']
-
 class OrderConfirmSerializer(serializers.ModelSerializer):
     order_id = serializers.IntegerField(required=True)
     contact_id = serializers.IntegerField(required=True)
@@ -80,6 +74,20 @@ class CartSerializer(serializers.ModelSerializer):
         fields = ['items', 'total_cart_price']
 
     def get_total_cart_price(self, obj) -> float:
+        total = 0
+        for item in obj.items.all():
+            product_info = ProductInfo.objects.filter(product=item.product, shop=item.shop).first()
+            total += (product_info.price if product_info else 0) * item.quantity
+        return total
+
+class OrderHistorySerializer(serializers.ModelSerializer):
+    total_order_price = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Order
+        fields = ['id', 'user', 'dt', 'status', 'total_order_price']
+
+    def get_total_order_price(self, obj) -> float:
         total = 0
         for item in obj.items.all():
             product_info = ProductInfo.objects.filter(product=item.product, shop=item.shop).first()
