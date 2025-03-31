@@ -264,15 +264,19 @@ class OrderConfirmView(APIView):
 
         order_id = serializer.validated_data["order_id"]
         contact_id = serializer.validated_data["contact_id"]
+        delivery_address_id = serializer.validated_data["delivery_address"]
 
         order = get_object_or_404(Order, id=order_id, user=request.user, status='cart')
         contact = get_object_or_404(Contact, id=contact_id, user=request.user)
+        delivery_address = get_object_or_404(DeliveryAddress, id=delivery_address_id, user=request.user)
         order.status = 'confirmed'
         order.save()
         send_mail(
-            'Подтверждение заказа',
-            f'Ваш заказ #{order.id} подтверждён.',
-            'shop@example.com',
+            "Подтверждение заказа!",
+            f"Ваш заказ #{order.id} подтверждён.\n"
+            f"Контактное лицо: {contact.first_name} {contact.last_name}, Телефон: {contact.phone}, Email: {contact.email}\n"
+            f"Адрес доставки: {delivery_address.address_line}, {delivery_address.city}, {delivery_address.country}",
+            "shop@example.com"
             [request.user.email],
             fail_silently=False,
         )
