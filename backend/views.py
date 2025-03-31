@@ -11,7 +11,8 @@ from drf_spectacular.utils import extend_schema
 from .models import Product, ProductInfo, Order, OrderItem, DeliveryAddress, Contact
 from .serializers import (
     UserSerializer, ProductSerializer, ProductInfoSerializer, ContactSerializer,
-    OrderSerializer, OrderItemSerializer, DeliveryAddressSerializer, OrderDetailSerializer, OrderConfirmSerializer
+    OrderSerializer, OrderItemSerializer, DeliveryAddressSerializer, OrderConfirmSerializer,
+    CartSerializer
 )
 
 
@@ -98,7 +99,7 @@ class ProductDetailView(APIView):
 class CartView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     @extend_schema(
-        responses={200: OrderDetailSerializer(many=True)},
+        responses={200: CartSerializer},
         summary="List all items in the cart",
         description="List all items in the shopping cart.",
         tags=['Cart'],
@@ -108,8 +109,7 @@ class CartView(APIView):
         order = Order.objects.filter(user=request.user, status='cart').first()
         if not order:
             return Response({'error': 'Cart is empty'}, status=status.HTTP_200_OK)
-        order_items = OrderItem.objects.filter(order=order)
-        serializer = OrderDetailSerializer(order_items, many=True)
+        serializer = CartSerializer(order)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 

@@ -1,4 +1,5 @@
 from itertools import product
+from operator import ifloordiv
 
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import password_changed
@@ -69,6 +70,20 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     def get_total_price(self, obj) -> float:
         product_info = ProductInfo.objects.filter(product=obj.product, shop=obj.shop).first()
         return (product_info.price * obj.quantity) if product_info else 0
+
+class CartSerializer(serializers.ModelSerializer):
+    items = OrderDetailSerializer(many=True, read_only=True)
+    total_cart_price = serializers.SerializerMethodField()
+    class Meta:
+        model = Order
+        fields = ['items', 'total_cart_price']
+
+    def get_total_cart_price(self, obj) -> float:
+        total = 0
+        for item in obj.items.all():
+            product_info = ProductInfo.objects.filter(product=item.product, shop=item.shop).first()
+            total += (product_info.price if product_info else 0) * item.quantity
+        return total
 
 class DeliveryAddressSerializer(serializers.ModelSerializer):
     class Meta:
