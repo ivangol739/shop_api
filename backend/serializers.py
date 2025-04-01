@@ -109,6 +109,13 @@ class OrderFullDetailSerializer(serializers.ModelSerializer):
             total += (product_info.price if product_info else 0) * item.quantity
         return total
 
+class OrderStatusUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = ['status']
+        extra_kwargs = {'status': {'required': True}}
+
+
 class DeliveryAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = DeliveryAddress

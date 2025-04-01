@@ -12,7 +12,7 @@ from .models import Product, ProductInfo, Order, OrderItem, DeliveryAddress, Con
 from .serializers import (
     UserSerializer, ProductSerializer, ProductInfoSerializer, ContactSerializer,
     OrderItemSerializer, DeliveryAddressSerializer, OrderConfirmSerializer,
-    CartSerializer, OrderHistorySerializer, OrderFullDetailSerializer
+    CartSerializer, OrderHistorySerializer, OrderFullDetailSerializer, OrderStatusUpdateSerializer
 )
 
 
@@ -270,6 +270,7 @@ class OrderConfirmView(APIView):
         delivery_address = get_object_or_404(DeliveryAddress, id=delivery_address_id, user=request.user)
         order.status = 'confirmed'
         order.save()
+
         send_mail(
             "Подтверждение заказа!",
             f"Ваш заказ #{order.id} подтверждён.\n"
@@ -317,3 +318,24 @@ class OrderDetailView(APIView):
             return Response(serializer.data)
         except Order.DoesNotExist:
             return Response({'error': 'Order not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class OrderStatusUpdateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        request=OrderStatusUpdateSerializer,
+        responses={200: None},
+        summary="Update order status",
+        description="Updating the status of an order.",
+        tags=['Order'],
+    )
+
+    def patch(self, request, order_id):
+        order = get_object_or_404(Order, id=order_id, user=request.user)
+        order_old = order.status
+        serializer = OrderStatusUpdateSerializer(order, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"old_status": order_old, "new_status": order.status}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
