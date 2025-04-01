@@ -1,3 +1,4 @@
+from dataclasses import fields
 from itertools import product
 from operator import ifloordiv
 
@@ -56,7 +57,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     total_price = serializers.SerializerMethodField()
     class Meta:
         model = OrderItem
-        fields = ["product", "shop", "price", "quantity", "total_price"]
+        fields = ["id", "product", "shop", "price", "quantity", "total_price"]
 
     def get_price(self, obj) -> float:
         product_info = ProductInfo.objects.filter(product=obj.product, shop=obj.shop).first()
@@ -86,6 +87,20 @@ class OrderHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ['id', 'user', 'dt', 'status', 'total_order_price']
+
+    def get_total_order_price(self, obj) -> float:
+        total = 0
+        for item in obj.items.all():
+            product_info = ProductInfo.objects.filter(product=item.product, shop=item.shop).first()
+            total += (product_info.price if product_info else 0) * item.quantity
+        return total
+
+class OrderFullDetailSerializer(serializers.ModelSerializer):
+    items = OrderDetailSerializer(many=True, read_only=True)
+    total_order_price = serializers.SerializerMethodField()
+    class Meta:
+        model = Order
+        fields = ['id', 'dt', 'items', 'total_order_price']
 
     def get_total_order_price(self, obj) -> float:
         total = 0

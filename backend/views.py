@@ -12,7 +12,7 @@ from .models import Product, ProductInfo, Order, OrderItem, DeliveryAddress, Con
 from .serializers import (
     UserSerializer, ProductSerializer, ProductInfoSerializer, ContactSerializer,
     OrderItemSerializer, DeliveryAddressSerializer, OrderConfirmSerializer,
-    CartSerializer, OrderHistorySerializer
+    CartSerializer, OrderHistorySerializer, OrderFullDetailSerializer
 )
 
 
@@ -293,8 +293,27 @@ class OrderHistoryView(APIView):
     )
 
     def get(self, request):
-        orders = Order.objects.filter(user=request.user).order_by('-dt')
+        orders = Order.objects.filter(user=request.user).exclude(status='cart').order_by('-dt')
         if not orders:
             return Response({'error': 'No orders found'}, status=status.HTTP_404_NOT_FOUND)
         serializer = OrderHistorySerializer(orders, many=True)
         return Response(serializer.data)
+
+
+class OrderDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        responses={200: OrderFullDetailSerializer},
+        summary="Get order details",
+        description="Getting details of a specific order by its ID.",
+        tags=['Order'],
+    )
+
+    def get(self, request, order_id):
+        try:
+            order = Order.objects.get(id=order_id, user=request.user, status='confirmed')
+            serializer = OrderFullDetailSerializer(order)
+            return Response(serializer.data)
+        except Order.DoesNotExist:
+            return Response({'error': 'Order not found'}, status=status.HTTP_404_NOT_FOUND)

@@ -1,7 +1,7 @@
 from django.urls import path
 from backend.views import (RegisterView, LoginView, ProductListView, ProductDetailView, CartAddView,
     CartDeleteView, CartView, DeliveryAddressAddView, DeliveryAddressDeleteView, DeliveryAddressView,
-    ContactView, OrderConfirmView, OrderHistoryView, OrderHistoryView)
+    ContactView, OrderConfirmView, OrderHistoryView, OrderDetailView)
 
 app_name = "backend"
 
@@ -18,5 +18,6 @@ urlpatterns = [
     path("delivery-address/remove/<int:address_id>/", DeliveryAddressDeleteView.as_view(), name="delivery-address-delete"),
     path("contact/", ContactView.as_view(), name="contact"),
     path("order-confirm/", OrderConfirmView.as_view(), name="order-confirm"),
-    path("order-history/", OrderHistoryView.as_view(), name="order-history"),
+    path("order/history/", OrderHistoryView.as_view(), name="order-history"),
+    path("order/detail/<int:order_id>/", OrderDetailView.as_view(), name="order-detail")
 ]
