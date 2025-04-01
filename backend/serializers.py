@@ -42,12 +42,11 @@ class OrderItemSerializer(serializers.ModelSerializer):
         fields = ['id', 'product_id', 'quantity']
 
 class OrderConfirmSerializer(serializers.ModelSerializer):
-    order_id = serializers.IntegerField(required=True)
     contact_id = serializers.IntegerField(required=True)
     delivery_address = serializers.IntegerField(required=True)
     class Meta:
         model = Order
-        fields = ['order_id', 'contact_id', 'delivery_address']
+        fields = ['contact_id', 'delivery_address']
 
 class OrderDetailSerializer(serializers.ModelSerializer):
     product = serializers.CharField(source='product.name', read_only=True)

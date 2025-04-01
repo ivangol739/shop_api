@@ -216,6 +216,24 @@ class ContactView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     @extend_schema(
+        responses={200: ContactSerializer(many=True)},
+        summary="List all contacts",
+        description="List all contacts.",
+        tags=['Contact'],
+    )
+
+    def get(self, request):
+        contacts = Contact.objects.filter(user=request.user)
+        if not contacts:
+            return Response({'error': 'No contacts found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ContactSerializer(contacts, many=True)
+        return Response(serializer.data)
+
+
+class ContactAddView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
         request=ContactSerializer,
         responses={201: ContactSerializer},
         summary="Adding a contact",
@@ -230,19 +248,21 @@ class ContactView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+class ContactDeleteView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
     @extend_schema(
-        responses={200: ContactSerializer(many=True)},
-        summary="List all contacts",
-        description="List all contacts.",
+        responses={204: None},
+        summary="Delete a contact",
+        description="Deletes a specific contact by its ID.",
         tags=['Contact'],
     )
 
-    def get(self, request):
-        contacts = Contact.objects.filter(user=request.user)
-        if not contacts:
-            return Response({'error': 'No contacts found'}, status=status.HTTP_404_NOT_FOUND)
-        serializer = ContactSerializer(contacts, many=True)
-        return Response(serializer.data)
+    def delete(self, request, contact_id):
+        contact = get_object_or_404(Contact, id=contact_id, user=request.user)
+        contact.delete()
+        return Response({'message': "Contact deleted"}, status=status.HTTP_204_NO_CONTENT)
 
 
 class OrderConfirmView(APIView):
@@ -261,11 +281,10 @@ class OrderConfirmView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        order_id = serializer.validated_data["order_id"]
         contact_id = serializer.validated_data["contact_id"]
         delivery_address_id = serializer.validated_data["delivery_address"]
 
-        order = get_object_or_404(Order, id=order_id, user=request.user, status='cart')
+        order = get_object_or_404(Order, user=request.user, status='cart')
         contact = get_object_or_404(Contact, id=contact_id, user=request.user)
         delivery_address = get_object_or_404(DeliveryAddress, id=delivery_address_id, user=request.user)
         order.status = 'confirmed'
@@ -276,7 +295,7 @@ class OrderConfirmView(APIView):
             f"Ваш заказ #{order.id} подтверждён.\n"
             f"Контактное лицо: {contact.first_name} {contact.last_name}, Телефон: {contact.phone}, Email: {contact.email}\n"
             f"Адрес доставки: {delivery_address.address_line}, {delivery_address.city}, {delivery_address.country}",
-            "shop@example.com"
+            "shop@example.com",
             [request.user.email],
             fail_silently=False,
         )
