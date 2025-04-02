@@ -31,6 +31,17 @@ class RegisterView(APIView):
         if serializer.is_valid():
             user = serializer.save()
             token = Token.objects.create(user=user)
+            try:
+                send_mail(
+                    subject="Подтверждение регистрации",
+                    message=f"Здравствуйте, {user.username}!\n\nВаш аккаунт успешно создан.",
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email],
+                    fail_silently=False,
+                )
+            except Exception as e:
+                print(f"Ошибка отправки email: {e}")
+
             return Response({
                 'token': token.key,
                 'user': UserSerializer(user).data
@@ -289,16 +300,19 @@ class OrderConfirmView(APIView):
         delivery_address = get_object_or_404(DeliveryAddress, id=delivery_address_id, user=request.user)
         order.status = 'confirmed'
         order.save()
-
-        send_mail(
-            "Подтверждение заказа!",
-            f"Ваш заказ #{order.id} подтверждён.\n"
-            f"Контактное лицо: {contact.first_name} {contact.last_name}, Телефон: {contact.phone}, Email: {contact.email}\n"
-            f"Адрес доставки: {delivery_address.address_line}, {delivery_address.city}, {delivery_address.country}",
-            "shop@example.com",
-            [request.user.email],
-            fail_silently=False,
-        )
+        try:
+            send_mail(
+                "Подтверждение заказа!",
+                f"Ваш заказ #{order.id} подтверждён.\n"
+                f"Контактное лицо: {contact.first_name} {contact.last_name}, Телефон: {contact.phone}, Email: {contact.email}\n"
+                f"Адрес доставки: {delivery_address.address_line}, {delivery_address.city}, {delivery_address.country}",
+                "shop@example.com",
+                [request.user.email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            print(f"Ошибка отправки email: {e}")
+            
         return Response({'message': 'Заказ подтверждён и email отправлен'}, status=status.HTTP_200_OK)
 
 
