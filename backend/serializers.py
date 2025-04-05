@@ -17,13 +17,14 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
 class ProductSerializer(serializers.ModelSerializer):
-    category = serializers.CharField(source='get_category_name', read_only=True)
+    category = serializers.CharField(source='get_category', read_only=True)
     class Meta:
         model = Product
         fields = ['id', 'name', 'category']
 
 class ProductInfoSerializer(serializers.ModelSerializer):
     product = ProductSerializer()
+    shop = serializers.CharField(source='shop.name', read_only=True)
     class Meta:
         model = ProductInfo
         fields = ['id', 'product', 'shop', 'name', 'quantity', 'price', 'price_rrc']
