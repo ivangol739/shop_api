@@ -37,6 +37,9 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
+    def get_category(self):
+        return self.category.name
+
 
 class ProductInfo(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='product_infos')
@@ -90,6 +93,13 @@ class Order(models.Model):
     def __str__(self):
         return f"Заказ {self.id} от {self.dt}"
 
+    def get_total_order_price(self):
+        total = 0
+        for item in self.items.all():
+            product_info = ProductInfo.objects.filter(product=item.product, shop=item.shop).first()
+            total += (product_info.price if product_info else 0) * item.quantity
+        return float(total)
+
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='order_items')
@@ -101,7 +111,15 @@ class OrderItem(models.Model):
         verbose_name_plural = 'Элементы заказа'
 
     def __str__(self):
-        return f"{self.product} x{self.quantity}"
+        return f"{self.product}, {self.quantity}"
+
+    def get_price(self):
+        product_info = ProductInfo.objects.filter(product=self.product, shop=self.shop).first()
+        return float(product_info.price) if product_info else None
+
+    def get_total_price(self):
+        product_info = ProductInfo.objects.filter(product=self.product, shop=self.shop).first()
+        return float(product_info.price * self.quantity) if product_info else 0
 
 class Contact(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='contacts')

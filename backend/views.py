@@ -84,6 +84,7 @@ class ProductListView(APIView):
 
     def get(self, request):
         products = Product.objects.all()
+        print(products)
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
 
@@ -312,7 +313,7 @@ class OrderConfirmView(APIView):
             )
         except Exception as e:
             print(f"Ошибка отправки email: {e}")
-            
+
         return Response({'message': 'Заказ подтверждён и email отправлен'}, status=status.HTTP_200_OK)
 
 
