@@ -34,6 +34,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'grappelli',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -122,7 +123,14 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+
+STATIC_URL = '/static/'
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),  # если есть отдельная папка для статики в проекте
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -152,3 +160,5 @@ EMAIL_HOST_USER = str(os.getenv('EMAIL_HOST_USER'))
 EMAIL_HOST_PASSWORD = str(os.getenv('EMAIL_HOST_PASSWORD'))
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
+
+GRAPPELLI_ADMIN_TITLE = "Shop Admin"
