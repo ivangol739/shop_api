@@ -4,10 +4,10 @@ from rest_framework import serializers
 from .models import Product, ProductInfo, Order, OrderItem, DeliveryAddress, Contact
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'password']
+        fields = ['id', 'username', 'first_name', 'last_name', 'email', 'password']
 
     def create(self, validated_data):
         password = validated_data.pop('password')
@@ -15,6 +15,11 @@ class UserSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
+
+class UserLoginSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'password']
 
 class ProductSerializer(serializers.ModelSerializer):
     category = serializers.CharField(source='get_category', read_only=True)

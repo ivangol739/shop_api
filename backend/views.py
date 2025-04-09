@@ -10,41 +10,41 @@ from django.conf import settings
 from drf_spectacular.utils import extend_schema
 from .models import Product, ProductInfo, Order, OrderItem, DeliveryAddress, Contact
 from .serializers import (
-    UserSerializer, ProductSerializer, ProductInfoSerializer, ContactSerializer,
+    UserRegisterSerializer, UserLoginSerializer, ProductSerializer, ProductInfoSerializer, ContactSerializer,
     OrderItemSerializer, DeliveryAddressSerializer, OrderConfirmSerializer,
     CartSerializer, OrderHistorySerializer, OrderFullDetailSerializer, OrderStatusUpdateSerializer
 )
+from .tasks import send_email_task
 
 
 class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]
     @extend_schema(
-        request=UserSerializer,
-        responses={201: UserSerializer},
+        request=UserRegisterSerializer,
+        responses={201: UserRegisterSerializer},
         summary="Register a new user",
         description="Register a new user with the provided username, email, and password.",
         tags=['Authentication'],
     )
 
     def post(self, request):
-        serializer = UserSerializer(data=request.data)
+        serializer = UserRegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
             token = Token.objects.create(user=user)
             try:
-                send_mail(
+                send_email_task.delay(
                     subject="Подтверждение регистрации",
                     message=f"Здравствуйте, {user.username}!\n\nВаш аккаунт успешно создан.",
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[user.email],
-                    fail_silently=False,
                 )
             except Exception as e:
                 print(f"Ошибка отправки email: {e}")
 
             return Response({
                 'token': token.key,
-                'user': UserSerializer(user).data
+                'user': UserRegisterSerializer(user).data
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -52,8 +52,8 @@ class RegisterView(APIView):
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
     @extend_schema(
-        request=UserSerializer,
-        responses={200: UserSerializer},
+        request=UserLoginSerializer,
+        responses={200: UserLoginSerializer},
         summary="Login a user",
         description="Login a user with the provided username and password.",
         tags=['Authentication'],
@@ -68,7 +68,7 @@ class LoginView(APIView):
             token, _ = Token.objects.get_or_create(user=user)
             return Response({
                 'token': token.key,
-                'user': UserSerializer(user).data
+                'user': UserLoginSerializer(user).data
             }, status=status.HTTP_200_OK)
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -302,14 +302,13 @@ class OrderConfirmView(APIView):
         order.status = 'confirmed'
         order.save()
         try:
-            send_mail(
+            send_email_task.delay(
                 "Подтверждение заказа!",
                 f"Ваш заказ #{order.id} подтверждён.\n"
                 f"Контактное лицо: {contact.first_name} {contact.last_name}, Телефон: {contact.phone}, Email: {contact.email}\n"
                 f"Адрес доставки: {delivery_address.address_line}, {delivery_address.city}, {delivery_address.country}",
                 "shop@example.com",
                 [request.user.email],
-                fail_silently=False,
             )
         except Exception as e:
             print(f"Ошибка отправки email: {e}")

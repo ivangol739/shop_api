@@ -1,0 +1,37 @@
+services:
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/shop_api
+      - ./media:/shop_api/media
+      - ./static:/shop_api/static
+      - ./staticfiles:/shop_api/staticfiles
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=1
+      - DJANGO_SETTINGS_MODULE=orders.settings
+    depends_on:
+      - redis
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  celery:
+    build: .
+    command: celery -A orders.celery worker -l info
+    volumes:
+      - .:/shop_api
+      - ./media:/shop_api/media
+      - ./static:/shop_api/static
+      - ./staticfiles:/shop_api/staticfiles
+    depends_on:
+      - web
+      - redis
+    environment:
+      - DJANGO_SETTINGS_MODULE=orders.settings

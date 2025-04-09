@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from ...utils.import_data import import_shop_data
+from backend.tasks import image_shop_data_task
 import yaml
 
 class Command(BaseCommand):
@@ -11,7 +12,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         file_path = options['file_path']
         try:
-            import_shop_data(file_path)
+            image_shop_data_task.delay(file_path)
             self.stdout.write(self.style.SUCCESS('Данные импортированы!'))
         except FileNotFoundError as e:
             self.stdout.write(self.style.ERROR(f'Ошибка: {str(e)}'))
