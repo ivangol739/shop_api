@@ -8,13 +8,14 @@ from django.contrib.auth import authenticate, login
 from django.core.mail import send_mail
 from django.conf import settings
 from drf_spectacular.utils import extend_schema
-from .models import Product, ProductInfo, Order, OrderItem, DeliveryAddress, Contact
+from .models import Product, ProductInfo, Order, OrderItem, DeliveryAddress, Contact, UserProfile
 from .serializers import (
     UserRegisterSerializer, UserLoginSerializer, ProductSerializer, ProductInfoSerializer, ContactSerializer,
     OrderItemSerializer, DeliveryAddressSerializer, OrderConfirmSerializer,
-    CartSerializer, OrderHistorySerializer, OrderFullDetailSerializer, OrderStatusUpdateSerializer
+    CartSerializer, OrderHistorySerializer, OrderFullDetailSerializer, OrderStatusUpdateSerializer, UserAvatarSerializer,
+    ProductImageSerializer
 )
-from .tasks import send_email_task
+from .tasks import send_email_task, resize_image_task
 
 
 class RegisterView(APIView):
@@ -371,4 +372,49 @@ class OrderStatusUpdateView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response({"old_status": order_old, "new_status": order.status}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserAvatarView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        request=UserAvatarSerializer,
+        responses={200: UserAvatarSerializer},
+        summary="Upload user avatar",
+        description="Upload the avatar of a user.",
+        tags=['UserAvatar'],
+    )
+
+    def post(self, request):
+        profile, created = UserProfile.objects.get_or_create(user=request.user)
+        serializer = UserAvatarSerializer(profile, data=request.data, partial=True)
+        if serializer.is_valid():
+            old_avatar = profile.avatar.path if profile.avatar else None
+            serializer.save()
+
+            resize_image_task.delay(profile.avatar.path, 300, 300, old_avatar)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ProductImageUploadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        request=ProductImageSerializer,
+        responses={200: ProductImageSerializer},
+        summary="Upload product image",
+        description="Upload an image for a product.",
+        tags=['Products'],
+    )
+
+    def post(self, request, product_id):
+        product = get_object_or_404(Product, id=product_id)
+        serializer = ProductImageSerializer(product, data=request.data, partial=True)
+        if serializer.is_valid():
+            old_image = product.image.path if product.image else None
+            serializer.save()
+            resize_image_task.delay(product.image.path, 300, 300, old_image)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

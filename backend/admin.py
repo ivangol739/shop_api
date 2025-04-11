@@ -3,7 +3,7 @@ from .models import (
     Shop, Category, Product, ProductInfo,
     Parameter, ProductParameter,
     Order, OrderItem,
-    Contact, DeliveryAddress
+    Contact, DeliveryAddress, UserProfile
 )
 
 
@@ -73,4 +73,10 @@ class ContactAdmin(admin.ModelAdmin):
 class DeliveryAddressAdmin(admin.ModelAdmin):
     list_display = [field.name for field in DeliveryAddress._meta.fields]
     search_fields = ['address_line', 'city', 'country']
+    autocomplete_fields = ['user']
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = [field.name for field in UserProfile._meta.fields]
+    search_fields = ['user__username']
     autocomplete_fields = ['user']

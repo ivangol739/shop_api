@@ -1,6 +1,16 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Профиль пользователя'
+        verbose_name_plural = 'Профили пользователя'
+
+    def __str__(self):
+        return f"Профиль {self.user.username}"
 
 class Shop(models.Model):
     name = models.CharField(max_length=255)
@@ -29,6 +39,7 @@ class Category(models.Model):
 class Product(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
     name = models.CharField(max_length=255)
+    image = models.ImageField(upload_to='products/', null=True, blank=True)
 
     class Meta:
         verbose_name = 'Продукт'

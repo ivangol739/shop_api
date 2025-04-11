@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import password_changed
 from rest_framework import serializers
-from .models import Product, ProductInfo, Order, OrderItem, DeliveryAddress, Contact
+from .models import Product, ProductInfo, Order, OrderItem, DeliveryAddress, Contact, UserProfile
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
@@ -93,4 +93,15 @@ class ContactSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
         fields = ['id', 'last_name', 'first_name', 'middle_name', 'email', 'phone']
+
+class UserAvatarSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ['avatar']
+
+
+class ProductImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = ['image']
 
