@@ -58,3 +58,5 @@ jobs:
 
       - name: Upload to Codecov
         uses: codecov/codecov-action@v3
+        with:
+          file: coverage.xml
