@@ -35,3 +35,17 @@ services:
       - redis
     environment:
       - DJANGO_SETTINGS_MODULE=orders.settings
+
+
+  test:
+    build: .
+    command: >
+      sh -c "coverage run -m pytest backend/tests &&
+             coverage report &&
+             coverage html"
+    volumes:
+      - .:/shop_api
+    environment:
+      - DJANGO_SETTINGS_MODULE=orders.settings
+    depends_on:
+      - web
