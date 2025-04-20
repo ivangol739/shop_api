@@ -47,6 +47,11 @@ DEFAULT_FROM_EMAIL=
 NAME=
 USER=
 PASSWORD=
+
+# Auth Settings Google
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = 
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = 
+SOCIAL_AUTH_GOOGLE_OAUTH2_REDIRECT_URI = 
 ```
 
 ---
@@ -81,3 +86,15 @@ docker-compose exec web python manage.py createsuperuser
 docker-compose exec web python manage.py import_shop_data /shop_api/data/shop1.yaml
 ```
 
+### 🌐 Шаг 7: Авторизация через google
+
+```
+https://accounts.google.com/o/oauth2/v2/auth?
+client_id=SOCIAL_AUTH_GOOGLE_OAUTH2_KEY
+&redirect_uri=SOCIAL_AUTH_GOOGLE_OAUTH2_REDIRECT_URI
+&response_type=code
+&scope=openid%20email%20profile
+&access_type=offline
+&prompt=consent
+```
+Вставить в код `SOCIAL_AUTH_GOOGLE_OAUTH2_KEY` и `SOCIAL_AUTH_GOOGLE_OAUTH2_REDIRECT_URI`, далее вставить ссылку в браузер для авторизации.

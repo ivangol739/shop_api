@@ -1,3 +1,4 @@
+import requests
 from django.core.serializers import serialize
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
@@ -5,9 +6,9 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate, login
-from django.core.mail import send_mail
 from django.conf import settings
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiResponse
+from django.contrib.auth import get_user_model
 from .models import Product, ProductInfo, Order, OrderItem, DeliveryAddress, Contact, UserProfile
 from .serializers import (
     UserRegisterSerializer, UserLoginSerializer, ProductSerializer, ProductInfoSerializer, ContactSerializer,
@@ -17,6 +18,7 @@ from .serializers import (
 )
 from .tasks import send_email_task, resize_image_task
 
+User = get_user_model()
 
 class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -73,6 +75,72 @@ class LoginView(APIView):
             }, status=status.HTTP_200_OK)
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
+
+class GoogleOAuthCallbackAPIView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        code = request.query_params.get("code")
+        if not code:
+            return Response({"error": "Missing code"}, status=400)
+
+        # Меняем code на access_token и id_token
+        token_url = "https://oauth2.googleapis.com/token"
+        data = {
+            "code": code,
+            "client_id": settings.SOCIAL_AUTH_GOOGLE_OAUTH2_KEY,
+            "client_secret": settings.SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET,
+            "redirect_uri": settings.SOCIAL_AUTH_GOOGLE_OAUTH2_REDIRECT_URI,
+            "grant_type": "authorization_code"
+        }
+
+        token_response = requests.post(token_url, data=data)
+        if token_response.status_code != 200:
+            return Response({"error": "Failed to fetch tokens from Google"}, status=400)
+
+        tokens = token_response.json()
+        id_token = tokens.get("id_token")
+
+        # Проверяем id_token и получаем инфо
+        from google.oauth2 import id_token as google_id_token
+        from google.auth.transport import requests as google_requests
+
+        try:
+            idinfo = google_id_token.verify_oauth2_token(
+                id_token,
+                google_requests.Request(),
+                settings.SOCIAL_AUTH_GOOGLE_OAUTH2_KEY
+            )
+            email = idinfo.get("email")
+            first_name = idinfo.get("given_name", "")
+            last_name = idinfo.get("family_name", "")
+            username = email.split("@")[0]
+
+            user, created = User.objects.get_or_create(email=email, defaults={
+                "username": username,
+                "first_name": first_name,
+                "last_name": last_name
+            })
+
+            if created:
+                user.set_unusable_password()
+                user.save()
+
+            token, _ = Token.objects.get_or_create(user=user)
+
+            return Response({
+                "token": token.key,
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name
+                }
+            })
+
+        except Exception as e:
+            return Response({"error": "Token verification failed", "details": str(e)}, status=400)
 
 class ProductListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -418,3 +486,5 @@ class ProductImageUploadView(APIView):
             resize_image_task.delay(product.image.path, 300, 300, old_image)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
