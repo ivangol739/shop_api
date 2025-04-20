@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/ivangol739/shop_api/branch/main/graph/badge.svg)](https://codecov.io/gh/ivanpetrov/shop_api)
+
 # Shop API
 
 **Shop API** — это REST API для интернет-магазина на базе Django с использованием PostgreSQL, Celery и Docker. 
