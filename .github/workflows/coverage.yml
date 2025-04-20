@@ -9,6 +9,31 @@ on:
 jobs:
   coverage:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_DB: shop_db
+          POSTGRES_USER: shop_user
+          POSTGRES_PASSWORD: shop_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NAME: shop_db
+      USER: shop_user
+      PASSWORD: shop_password
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DJANGO_SETTINGS_MODULE: orders.settings
+      DEBUG: 1
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -23,6 +48,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-django coverage
+
+      - name: Wait for DB to be ready
+        run: |
+          until pg_isready -h localhost -p 5432; do echo "⏳ Ожидание базы..."; sleep 1; done
 
       - name: Run tests with coverage
         run: |
