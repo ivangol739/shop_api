@@ -1,4 +1,5 @@
 [![codecov](https://codecov.io/gh/ivangol739/shop_api/branch/main/graph/badge.svg)](https://codecov.io/gh/ivangol739/shop_api)
+![Coverage Badge](https://img.shields.io/github/workflow/status/ivangol739/shop_api/Coverage%20Report?label=coverage)
 
 # Shop API
 
