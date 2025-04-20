@@ -67,8 +67,8 @@ jobs:
           slug: ivangol739/shop_api
           file: coverage.xml
 
-      - name: Comment coverage to PR
+      - name: Get Cover
         uses: orgoro/coverage@v3.2
         with:
-          coverageFile: coverage.xml
+          coverageFile: path/to/coverage.xml
           token: ${{ secrets.GITHUB_TOKEN }}
