@@ -1,4 +1,4 @@
-name: Run tests and upload coverage
+name: Django Tests with Codecov
 
 on: [push, pull_request]
 
@@ -6,13 +6,37 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_DB: shop_db
+          POSTGRES_USER: shop_user
+          POSTGRES_PASSWORD: shop_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NAME: shop_db
+      USER: shop_user
+      PASSWORD: shop_password
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DJANGO_SETTINGS_MODULE: orders.settings
+      DEBUG: 1
+
     steps:
       - uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: "3.10"
 
       - name: Install dependencies
         run: |
@@ -20,12 +44,17 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-django coverage codecov
 
+      - name: Wait for DB to be ready
+        run: |
+          until pg_isready -h localhost -p 5432; do echo "⏳ Ожидание базы..."; sleep 1; done
+
+      - name: Run migrations
+        run: python manage.py migrate
+
       - name: Run tests with coverage
         run: |
           coverage run -m pytest backend/tests
           coverage xml
 
-      - name: Upload coverage to Codecov
+      - name: Upload to Codecov
         uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}

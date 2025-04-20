@@ -88,12 +88,18 @@ WSGI_APPLICATION = 'orders.wsgi.application'
 
 DATABASES = {
     'default': {
+        # 'ENGINE': 'django.db.backends.postgresql',
+        # 'NAME': str(os.getenv('NAME')),
+        # 'USER': str(os.getenv('USER')),
+        # 'PASSWORD': str(os.getenv('PASSWORD')),
+        #'HOST': 'host.docker.internal',
+        #'PORT': '5432',
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': str(os.getenv('NAME')),
-        'USER': str(os.getenv('USER')),
-        'PASSWORD': str(os.getenv('PASSWORD')),
-        'HOST': 'host.docker.internal',
-        'PORT': '5432',
+        'NAME': os.getenv('NAME', 'shop_db'),
+        'USER': os.getenv('USER', 'shop_user'),
+        'PASSWORD': os.getenv('PASSWORD', 'shop_password'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
 
