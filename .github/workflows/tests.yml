@@ -1,6 +1,10 @@
 name: Django Tests with Codecov
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   test:
@@ -56,14 +60,15 @@ jobs:
           coverage run -m pytest backend/tests
           coverage xml
 
-      - name: Upload to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          file: coverage.xml
-
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: ivangol739/shop_api
           file: coverage.xml
+
+      - name: Comment coverage to PR
+        uses: orgoro/coverage@v3.2
+        with:
+          coverageFile: coverage.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
