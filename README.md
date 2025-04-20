@@ -1,4 +1,4 @@
-[![codecov](https://codecov.io/gh/ivangol739/shop_api/branch/main/graph/badge.svg)](https://codecov.io/gh/ivanpetrov/shop_api)
+[![codecov](https://codecov.io/gh/ivangol739/shop_api/branch/main/graph/badge.svg)](https://codecov.io/gh/ivangol739/shop_api)
 
 # Shop API
 
