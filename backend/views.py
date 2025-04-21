@@ -172,7 +172,7 @@ class ProductDetailView(APIView):
             product_info = ProductInfo.objects.get(product_id=product_id)
             serializer = ProductInfoSerializer(product_info)
             return Response(serializer.data)
-        except Product.DoesNotExist:
+        except ProductInfo.DoesNotExist:
             return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
@@ -486,5 +486,7 @@ class ProductImageUploadView(APIView):
             resize_image_task.delay(product.image.path, 300, 300, old_image)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 
