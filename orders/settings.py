@@ -88,12 +88,6 @@ WSGI_APPLICATION = 'orders.wsgi.application'
 
 DATABASES = {
     'default': {
-        # 'ENGINE': 'django.db.backends.postgresql',
-        # 'NAME': str(os.getenv('NAME')),
-        # 'USER': str(os.getenv('USER')),
-        # 'PASSWORD': str(os.getenv('PASSWORD')),
-        #'HOST': 'host.docker.internal',
-        #'PORT': '5432',
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv('NAME', 'shop_db'),
         'USER': os.getenv('USER', 'shop_user'),
@@ -161,6 +155,14 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '10/minute',
+        'user': '10/minute',
+    }
 }
 
 SPECTACULAR_SETTINGS = {

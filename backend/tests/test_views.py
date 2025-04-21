@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from backend.models import Product, Category, ProductInfo, Shop, Order, OrderItem, Contact, DeliveryAddress
 from rest_framework import status
 from unittest.mock import patch
+from time import sleep
 
 User = get_user_model()
 
@@ -194,3 +195,4 @@ def test_order_confirm_view(mock_send_email, client, auth_token):
     assert order.status == 'confirmed'
 
     mock_send_email.assert_called_once()
+
